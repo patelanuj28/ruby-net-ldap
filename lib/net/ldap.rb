@@ -318,6 +318,7 @@ class Net::LDAP
   DefaultAuth = { :method => :anonymous }
   DefaultTreebase = "dc=com"
   DefaultForceNoPage = false
+  DefaultKeepalive = true
 
   StartTlsOid = "1.3.6.1.4.1.1466.20037"
 
@@ -473,6 +474,7 @@ class Net::LDAP
     @auth = args[:auth] || DefaultAuth
     @base = args[:base] || DefaultTreebase
     @force_no_page = args[:force_no_page] || DefaultForceNoPage
+    @keepalive = args[:keepalive] || DefaultKeepalive
     encryption args[:encryption] # may be nil
 
     if pr = @auth[:password] and pr.respond_to?(:call)
@@ -851,6 +853,11 @@ class Net::LDAP
             :instrumentation_service => @instrumentation_service
           payload[:connection] = conn
           payload[:bind]       = @result = conn.bind(auth)
+          if @keepalive
+            @open_connection.close if @open_connection
+            @open_connection = conn
+            conn = nil
+          end
         ensure
           conn.close if conn
         end
